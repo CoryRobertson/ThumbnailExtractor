@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group 'com.github.coryrobertson'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jcodec:jcodec:0.2.5'
+    implementation 'org.jcodec:jcodec-javase:0.2.5'
+    implementation 'commons-io:commons-io:2.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    //implementation group: 'org.bytedeco', name: 'javacv-platform', version: '1.5.7'
+}
+
+test {
+    useJUnitPlatform()
+}
