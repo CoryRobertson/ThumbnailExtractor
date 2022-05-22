@@ -17,38 +17,29 @@ public class ThumbnailExtractor
 
     public static void main(String []args)
     {
-        boolean dirrectoryUsed = false;
-        String pathToSearch = "";
-        if(args.length >= 1)
-        {
-            dirrectoryUsed = true;
-            pathToSearch = args[0];
-        }
+        String pathToSearch;
 
         Collection<File> files;
 
-
-        if(dirrectoryUsed)
+        if(args.length >= 1)
         {
+            pathToSearch = args[0];
             files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
         }
         else
         {
             files = FileUtils.listFiles(new File("./"), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
-
         }
 
-
-        File[] files_ = files.toArray(new File[0]);
+        File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
         for(int i = 0; i < files_.length; i++)
         {
             String path = files_[i].getPath();
-            int index = path.indexOf(".mp4");
-            if(index == -1)
+            int index = path.indexOf(".mp4"); // search for .mp4 first
+            if(index == -1) // mp4 was not found
             {
-                index = path.indexOf(".mkv");
+                index = path.indexOf(".mkv"); // search for mkv
             }
-
 
             String outputPath = path.substring(0,index) + ".png";
 
@@ -56,11 +47,7 @@ public class ThumbnailExtractor
             {
                 extractFrameFromVideo(path, outputPath, 0);
             }
-            catch (JCodecException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (IOException e)
+            catch (JCodecException | IOException e)
             {
                 throw new RuntimeException(e);
             }
