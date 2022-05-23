@@ -1,5 +1,6 @@
 package com.github.coryrobertson.ThumbnailExtractor;
 
+import static net.sourceforge.argparse4j.impl.Arguments.storeTrue;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -30,39 +31,37 @@ public class ThumbnailExtractor
         ArgumentParser parser = ArgumentParsers.newFor("./ThumbnailExtractor").build()
                 .defaultHelp(true)
                 .description("Generate thumbnail for mp4 and mkv file recursively");
+        parser.addArgument("-r")
+                .action(storeTrue())
+                .setDefault(false)
+                .help("Force replacing thumbnails when found")
+                .required(false);
         parser.addArgument("-d")
                 .required(true)
                 .help("Directory to search for video files");
         parser.addArgument("-f")
                 .required(true)
                 .help("The frame number to extract from the video file");
-        parser.addArgument("-r")
-                .choices("false", "true")
-                .setDefault("false")
-                .required(false);
+
 
         Namespace ns = null;
 
-        try {
+        try
+        {
             ns = parser.parseArgs(args);
-        } catch (ArgumentParserException e) {
-            //parser.printHelp();
+        } catch (ArgumentParserException e)
+        {
+            parser.handleError(e);
             System.exit(0);
         }
 
-        boolean forceReplace = !ns.getAttrs().get("r").equals("true");
-
+        // acquire all args from argparse
+        boolean forceReplace = !((boolean) ns.getAttrs().get("r"));
         String pathToSearch = (String) ns.getAttrs().get("d");
-
-        Collection<File> files;
-
         int frameNumberExtract =  Integer.parseInt((String) ns.getAttrs().get("f"));
 
-        files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
-
-
-
-
+        // find all files recursively
+        Collection<File> files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
 
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
         for(int i = 0; i < files_.length; i++)
@@ -71,14 +70,17 @@ public class ThumbnailExtractor
 
             String fileName = files_[i].getName();
             fileName = fileName.substring(0,fileName.length() - 4); // remove file extension
-//            double progress = ((double)(i+1) / (double)files_.length) * 100;
-//            String progress_ = String.format("%.2f",progress);
+
             String progress_ = (i+1) + "/" + files_.length;
 
             int index = path.indexOf(".mp4"); // search for .mp4 first
             if(index == -1) // mp4 was not found
             {
                 index = path.indexOf(".mkv"); // search for .mkv
+                if(index == -1)// mkv was not found? this shouldn't be able to happen, but we continue just incase
+                {
+                    continue;
+                }
             }
 
             String outputPath = path.substring(0,index) + ".png";
@@ -96,9 +98,14 @@ public class ThumbnailExtractor
             {
                 extractFrameFromVideo(path, outputPath, frameNumberExtract);
             }
-            catch (JCodecException | IOException e)
+            catch (IOException e)
             {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+                System.err.println("Unable to output file, missing permissions?");
+            } catch (JCodecException e)
+            {
+                e.printStackTrace();
+                System.err.println("Error bad codec for video file?");
             }
         }
         System.out.println("Finished extracting thumbnails, thumbnails created: " + (files_.length));
