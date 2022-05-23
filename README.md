@@ -9,7 +9,9 @@ chmod +x ./gradlew
 ./gradlew installDist
 mv ./build/install/ThumbnailExtractor/* .
 cd bin
-./ThumbnailExtractor <directory to search> <frame number to extract>
+./ThumbnailExtractor -h
+./ThumbnailExtractor -d <path to directory to search e.g. ./path/to/folder/>
+
 ```
 
 

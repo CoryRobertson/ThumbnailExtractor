@@ -87,7 +87,7 @@ public class ThumbnailExtractor
             String outputPath = path.substring(0,index) + ".png";
 
             File skip = new File(files_[i].getParent() + "\\" + fileName + ".png");
-            if(skip.exists() && forceReplace)
+            if(skip.getAbsoluteFile().exists() && forceReplace)
             {
                 System.out.println("[" + progress_ + "]" + " Thumbnail already existed, skipping: " + path);
                 continue;
