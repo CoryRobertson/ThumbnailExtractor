@@ -1,5 +1,9 @@
 package com.github.coryrobertson.ThumbnailExtractor;
 
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
@@ -23,27 +27,40 @@ public class ThumbnailExtractor
     public static void main(String []args)
     {
 
-        String pathToSearch;
+        ArgumentParser parser = ArgumentParsers.newFor("./ThumbnailExtractor").build()
+                .defaultHelp(true)
+                .description("Generate thumbnail for mp4 and mkv file recursively");
+        parser.addArgument("-d")
+                .required(true)
+                .help("Directory to search for video files");
+        parser.addArgument("-f")
+                .required(true)
+                .help("The frame number to extract from the video file");
+        parser.addArgument("-r")
+                .choices("false", "true")
+                .setDefault("false")
+                .required(false);
 
-        Collection<File> files = null;
+        Namespace ns = null;
 
-        int frameNumberExtract = 0;
-
-        if(args.length >= 2)
-        {
-            pathToSearch = args[0];
-            frameNumberExtract = Integer.parseInt(args[1]);
-            files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
-        }
-        else
-        {
-            System.out.println("\nRun this program with arguments: <directory to search> <frame number to extract>");
-            System.out.println("<directory to search> is the directory the program will recursively search for files");
-            System.out.println("<frame number to extract> is the frame in each video that will be used as a thumbnail");
-            System.out.println("At the moment, the program only searches for mp4 files and mkv files");
-
+        try {
+            ns = parser.parseArgs(args);
+        } catch (ArgumentParserException e) {
+            //parser.printHelp();
             System.exit(0);
         }
+
+        boolean forceReplace = !ns.getAttrs().get("r").equals("true");
+
+        String pathToSearch = (String) ns.getAttrs().get("d");
+
+        Collection<File> files;
+
+        int frameNumberExtract =  Integer.parseInt((String) ns.getAttrs().get("f"));
+
+        files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
+
+
 
 
 
@@ -67,7 +84,7 @@ public class ThumbnailExtractor
             String outputPath = path.substring(0,index) + ".png";
 
             File skip = new File(files_[i].getParent() + "\\" + fileName + ".png");
-            if(skip.exists())
+            if(skip.exists() && forceReplace)
             {
                 System.out.println("[" + progress_ + "]" + " Thumbnail already existed, skipping: " + path);
                 continue;
