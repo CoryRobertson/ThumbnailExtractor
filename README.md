@@ -11,3 +11,5 @@ mv ./build/install/ThumbnailExtractor/* .
 cd bin
 ./ThumbnailExtractor <directory to search> <frame number to extract>
 ```
+
+

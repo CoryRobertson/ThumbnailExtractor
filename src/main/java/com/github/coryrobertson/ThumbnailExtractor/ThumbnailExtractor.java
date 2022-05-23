@@ -18,10 +18,7 @@ import java.util.Collection;
 public class ThumbnailExtractor
 {
 
-    //TODO: write building instructions for this code, even if its super simple
-    //TODO: write usage instructions for the program
     //TODO: make a bash script that downloads the git repo, then builds it using ./gradlew installDist, and finally copies the distribution to the top level folder
-
 
     public static void main(String []args)
     {
@@ -48,6 +45,8 @@ public class ThumbnailExtractor
             System.exit(0);
         }
 
+
+
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
         for(int i = 0; i < files_.length; i++)
         {
@@ -55,14 +54,26 @@ public class ThumbnailExtractor
 
             String fileName = files_[i].getName();
             fileName = fileName.substring(0,fileName.length() - 4); // remove file extension
+//            double progress = ((double)(i+1) / (double)files_.length) * 100;
+//            String progress_ = String.format("%.2f",progress);
+            String progress_ = (i+1) + "/" + files_.length;
 
             int index = path.indexOf(".mp4"); // search for .mp4 first
             if(index == -1) // mp4 was not found
             {
-                index = path.indexOf(".mkv"); // search for mkv
+                index = path.indexOf(".mkv"); // search for .mkv
             }
 
             String outputPath = path.substring(0,index) + ".png";
+
+            File skip = new File(files_[i].getParent() + "\\" + fileName + ".png");
+            if(skip.exists())
+            {
+                System.out.println("[" + progress_ + "]" + " Thumbnail already existed, skipping: " + path);
+                continue;
+            }
+
+            System.out.println("[" + progress_ + "] Extracting frame from: " + path +  " --> " + outputPath);
 
             try
             {
@@ -73,6 +84,7 @@ public class ThumbnailExtractor
                 throw new RuntimeException(e);
             }
         }
+        System.out.println("Finished extracting thumbnails, thumbnails created: " + (files_.length));
     }
 
     private static void extractFrameFromVideo(String videoPath, String outputPath, int frameNumber) throws JCodecException, IOException
