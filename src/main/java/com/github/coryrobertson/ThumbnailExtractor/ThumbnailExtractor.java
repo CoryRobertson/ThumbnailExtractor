@@ -36,6 +36,11 @@ public class ThumbnailExtractor
                 .setDefault(false)
                 .help("Force replacing thumbnails when found")
                 .required(false);
+        parser.addArgument("-rm")
+                .action(storeTrue())
+                .setDefault(false)
+                .help("Remove all thumbnails, instead of creating them, if they exist")
+                .required(false);
         parser.addArgument("-d")
                 .required(true)
                 .help("Directory to search for video files");
@@ -58,6 +63,7 @@ public class ThumbnailExtractor
 
         // acquire all args from argparse
         boolean forceReplace = !((boolean) ns.getAttrs().get("r"));
+        boolean remove = (boolean) ns.getAttrs().get("rm");
         String pathToSearch = (String) ns.getAttrs().get("d");
         int frameNumberExtract =  Integer.parseInt((String) ns.getAttrs().get("f"));
 
@@ -80,16 +86,27 @@ public class ThumbnailExtractor
                 index = path.indexOf(".mkv"); // search for .mkv
                 if(index == -1)// mkv was not found? this shouldn't be able to happen, but we continue just incase
                 {
-                    continue;
+                    System.exit(1);
+                    continue; // somehow a file was found using the regex and still had no mp4 or mkv inside its filename
                 }
             }
 
             String outputPath = path.substring(0,index) + ".png";
 
-            File skip = new File(files_[i].getParent() + "\\" + fileName + ".png");
-            if(skip.getAbsoluteFile().exists() && forceReplace)
+            File skip = new File(files_[i].getParent() + "/" + fileName + ".png");
+            if((skip.getAbsoluteFile().exists() && forceReplace) || remove)
             {
-                System.out.println("[" + progress_ + "]" + " Thumbnail already existed, skipping: " + path);
+
+                if(remove && skip.delete())
+                {
+                    System.out.println("[" + progress_ + "]" + " Thumbnail found, removing it: " + path);
+
+                }
+                else
+                {
+                    System.out.println("[" + progress_ + "]" + " Thumbnail already existed, skipping: " + path);
+
+                }
                 continue;
             }
 
