@@ -40,7 +40,8 @@ public class ThumbnailExtractor
                 .required(true)
                 .help("Directory to search for video files");
         parser.addArgument("-f")
-                .required(true)
+                .required(false)
+                .setDefault("60")
                 .help("The frame number to extract from the video file");
 
 
