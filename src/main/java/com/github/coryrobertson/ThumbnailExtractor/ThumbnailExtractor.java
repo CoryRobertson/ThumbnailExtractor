@@ -1,6 +1,9 @@
+package com.github.coryrobertson.ThumbnailExtractor;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
+
 import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
 import org.jcodec.common.model.Picture;
@@ -15,26 +18,44 @@ import java.util.Collection;
 public class ThumbnailExtractor
 {
 
+    //TODO: write building instructions for this code, even if its super simple
+    //TODO: write usage instructions for the program
+    //TODO: make a bash script that downloads the git repo, then builds it using ./gradlew installDist, and finally copies the distribution to the top level folder
+
+
     public static void main(String []args)
     {
+
         String pathToSearch;
 
-        Collection<File> files;
+        Collection<File> files = null;
 
-        if(args.length >= 1)
+        int frameNumberExtract = 0;
+
+        if(args.length >= 2)
         {
             pathToSearch = args[0];
+            frameNumberExtract = Integer.parseInt(args[1]);
             files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
         }
         else
         {
-            files = FileUtils.listFiles(new File("./"), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
+            System.out.println("\nRun this program with arguments: <directory to search> <frame number to extract>");
+            System.out.println("<directory to search> is the directory the program will recursively search for files");
+            System.out.println("<frame number to extract> is the frame in each video that will be used as a thumbnail");
+            System.out.println("At the moment, the program only searches for mp4 files and mkv files");
+
+            System.exit(0);
         }
 
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
         for(int i = 0; i < files_.length; i++)
         {
             String path = files_[i].getPath();
+
+            String fileName = files_[i].getName();
+            fileName = fileName.substring(0,fileName.length() - 4); // remove file extension
+
             int index = path.indexOf(".mp4"); // search for .mp4 first
             if(index == -1) // mp4 was not found
             {
@@ -45,7 +66,7 @@ public class ThumbnailExtractor
 
             try
             {
-                extractFrameFromVideo(path, outputPath, 0);
+                extractFrameFromVideo(path, outputPath, frameNumberExtract);
             }
             catch (JCodecException | IOException e)
             {
