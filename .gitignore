@@ -117,3 +117,6 @@ gradle-app.setting
 /testdir/test1/sample-5s.mp4
 /testdir/test2/testVideo1.mp4
 *.png
+/testdir/test1/sample-5s.jpg
+/testdir/test2/testVideo1.jpg
+/testdir/test3/testVideo2.jpg

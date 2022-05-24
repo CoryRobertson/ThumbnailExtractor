@@ -53,6 +53,10 @@ public class ThumbnailExtractor
                 .required(false)
                 .setDefault("-1.0")
                 .help("Used instead of using -f, allows you to pick a percentage of video length to be used to generate thumbnails");
+        parser.addArgument("-n")
+                .required(false)
+                .setDefault("")
+                .help("Filename to output, if not specified, the video file is the file name");
 
         Namespace ns = null;
 
@@ -68,6 +72,8 @@ public class ThumbnailExtractor
         // acquire all args from argparse
         boolean forceReplace = !((boolean) ns.getAttrs().get("r"));
         boolean remove = (boolean) ns.getAttrs().get("rm");
+        boolean usingForceName = ns.getAttrs().get("n") != "";
+        String forceName = (String) ns.getAttrs().get("n");
         String pathToSearch = (String) ns.getAttrs().get("d");
         int frameNumberExtract =  Integer.parseInt((String) ns.getAttrs().get("f"));
         boolean usingPercentage = ns.getAttrs().get("p") != "-1.0";
@@ -97,10 +103,24 @@ public class ThumbnailExtractor
                     continue; // somehow a file was found using the regex and still had no mp4 or mkv inside its filename
                 }
             }
+            String outputPath;
 
-            String outputPath = path.substring(0,index) + ".png";
+            if(!usingForceName)
+            {
+                outputPath = path.substring(0, index) + ".jpg";
+            } else
+            {
+                outputPath = files_[i].getParent() + "/" + forceName;
 
-            File skip = new File(files_[i].getParent() + "/" + fileName + ".png");
+            }
+
+            File skip = new File(files_[i].getParent() + "/" + fileName + ".jpg");
+
+            if(!skip.getAbsoluteFile().exists())
+            {
+                skip = new File(files_[i].getParent() + "/" + forceName);
+            }
+
             if((skip.getAbsoluteFile().exists() && forceReplace) || remove)
             {
 
@@ -146,7 +166,7 @@ public class ThumbnailExtractor
     {
         Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), frameNumber);
         RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
-        ImageIO.write(renderedImage, "png", new File(outputPath));
+        ImageIO.write(renderedImage, "jpg", new File(outputPath));
     }
 
     private static void extractFramePercentFromVideo(String videoPath, String outputPath, double percentage) throws JCodecException, IOException
@@ -164,6 +184,6 @@ public class ThumbnailExtractor
 
         Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), (int) Math.floor(frameNumber));
         RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
-        ImageIO.write(renderedImage, "png", new File(outputPath));
+        ImageIO.write(renderedImage, "jpg", new File(outputPath));
     }
 }
