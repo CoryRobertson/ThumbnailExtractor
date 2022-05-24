@@ -153,10 +153,16 @@ public class ThumbnailExtractor
             {
                 e.printStackTrace();
                 System.err.println("Unable to output file, missing permissions?");
-            } catch (JCodecException e)
+            }
+            catch (JCodecException e)
             {
                 e.printStackTrace();
                 System.err.println("Error bad codec for video file?");
+            }
+            catch (RuntimeException e)
+            {
+                e.printStackTrace();
+                System.err.println("Bad or invalid data when reading file, skipping.");
             }
         }
         System.out.println("Finished extracting thumbnails, thumbnails created: " + (files_.length));
