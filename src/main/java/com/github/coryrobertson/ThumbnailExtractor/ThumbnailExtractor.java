@@ -84,6 +84,9 @@ public class ThumbnailExtractor
         Collection<File> files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
 
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
+
+        int thumbGenCount = 0;
+
         for(int i = 0; i < files_.length; i++)
         {
             String path = files_[i].getPath();
@@ -141,12 +144,15 @@ public class ThumbnailExtractor
 
             try
             {
-                if(!usingPercentage) {
+                if(!usingPercentage)
+                {
                     extractFrameFromVideo(path, outputPath, frameNumberExtract);
+                    thumbGenCount++;
                 }
                 else
                 {
                     extractFramePercentFromVideo(path,outputPath,percentage);
+                    thumbGenCount++;
                 }
             }
             catch (IOException e)
@@ -165,7 +171,7 @@ public class ThumbnailExtractor
                 System.err.println("Bad or invalid data when reading file, skipping.");
             }
         }
-        System.out.println("Finished extracting thumbnails, thumbnails created: " + (files_.length));
+        System.out.println("Finished extracting thumbnails, thumbnails created: " + (thumbGenCount));
     }
 
     private static void extractFrameFromVideo(String videoPath, String outputPath, int frameNumber) throws JCodecException, IOException
