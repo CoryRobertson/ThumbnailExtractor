@@ -11,6 +11,7 @@ import org.apache.commons.io.filefilter.RegexFileFilter;
 
 import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
+import org.jcodec.common.*;
 import org.jcodec.common.model.Picture;
 import org.jcodec.scale.AWTUtil;
 
@@ -48,7 +49,10 @@ public class ThumbnailExtractor
                 .required(false)
                 .setDefault("60")
                 .help("The frame number to extract from the video file");
-
+        parser.addArgument("-p")
+                .required(false)
+                .setDefault("-1.0")
+                .help("Used instead of using -f, allows you to pick a percentage of video length to be used to generate thumbnails");
 
         Namespace ns = null;
 
@@ -66,6 +70,9 @@ public class ThumbnailExtractor
         boolean remove = (boolean) ns.getAttrs().get("rm");
         String pathToSearch = (String) ns.getAttrs().get("d");
         int frameNumberExtract =  Integer.parseInt((String) ns.getAttrs().get("f"));
+        boolean usingPercentage = ns.getAttrs().get("p") != "-1.0";
+        double percentage = Double.parseDouble((String) ns.getAttrs().get("p"));
+
 
         // find all files recursively
         Collection<File> files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
@@ -114,7 +121,13 @@ public class ThumbnailExtractor
 
             try
             {
-                extractFrameFromVideo(path, outputPath, frameNumberExtract);
+                if(!usingPercentage) {
+                    extractFrameFromVideo(path, outputPath, frameNumberExtract);
+                }
+                else
+                {
+                    extractFramePercentFromVideo(path,outputPath,percentage);
+                }
             }
             catch (IOException e)
             {
@@ -132,6 +145,24 @@ public class ThumbnailExtractor
     private static void extractFrameFromVideo(String videoPath, String outputPath, int frameNumber) throws JCodecException, IOException
     {
         Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), frameNumber);
+        RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
+        ImageIO.write(renderedImage, "png", new File(outputPath));
+    }
+
+    private static void extractFramePercentFromVideo(String videoPath, String outputPath, double percentage) throws JCodecException, IOException
+    {
+        File file = new File(videoPath);
+        Format f = JCodecUtil.detectFormat(file);
+        Demuxer d = JCodecUtil.createDemuxer(f, file); // thank you stack overflow <3 https://github.com/jcodec/jcodec/issues/168
+        DemuxerTrack vt = d.getVideoTracks().get(0);
+        DemuxerTrackMeta dtm = vt.getMeta();
+
+        int nFrames = dtm.getTotalFrames();
+        //int fps = (int)(nFrames / dtm.getTotalDuration());
+
+        double frameNumber = percentage * nFrames;
+
+        Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), (int) Math.floor(frameNumber));
         RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
         ImageIO.write(renderedImage, "png", new File(outputPath));
     }
