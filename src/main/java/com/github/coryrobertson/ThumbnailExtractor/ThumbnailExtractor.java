@@ -99,7 +99,7 @@ public class ThumbnailExtractor
 
                 if(remove && skip.delete())
                 {
-                    System.out.println("[" + progress_ + "]" + " Thumbnail found, removing it: " + path);
+                    System.out.println("[" + progress_ + "]" + " Thumbnail found, removing it: " + outputPath);
 
                 }
                 else
