@@ -17,6 +17,8 @@ import java.util.concurrent.Future;
 public class ThumbnailExtractor
 {
 
+    public static int thumbNailTotal;
+
     //TODO: make a bash script that downloads the git repo, then builds it using ./gradlew installDist, and finally copies the distribution to the top level folder
 
     public static void main(String []args)
@@ -63,7 +65,7 @@ public class ThumbnailExtractor
         }
 
         // acquire all args from argparse
-        boolean forceReplace = ((boolean) ns.getAttrs().get("r"));
+        boolean forceReplace = !((boolean) ns.getAttrs().get("r"));
         boolean remove = (boolean) ns.getAttrs().get("rm");
         boolean usingForceName = ns.getAttrs().get("n") != "";
         String forceName = (String) ns.getAttrs().get("n");
@@ -82,7 +84,7 @@ public class ThumbnailExtractor
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
 
         int thumbGenCount = 0;
-
+        thumbNailTotal = files_.length;
         for(int i = 0; i < files_.length; i++)
         {
             String path = files_[i].getPath();
@@ -102,8 +104,9 @@ public class ThumbnailExtractor
                     continue; // somehow a file was found using the regex and still had no mp4 or mkv inside its filename
                 }
             }
-            String outputPath;
 
+            // Here we generate our output path but taking off the file extension which is most likely .mp4, and appending .jpg to it.
+            String outputPath;
             if(!usingForceName)
             {
                 outputPath = path.substring(0, index) + ".jpg";
@@ -113,16 +116,18 @@ public class ThumbnailExtractor
 
             }
 
+            // This block here is for checking if the thumbnail exists already
             File skip = new File(files_[i].getParent() + "/" + fileName + ".jpg");
-
-            if(!skip.getAbsoluteFile().exists())
+            if(!skip.getAbsoluteFile().exists() && !forceName.isEmpty())
             {
                 skip = new File(files_[i].getParent() + "/" + forceName);
             }
 
+            // if we need to remove the file we enter this if statement, same for if we need to replace thumbnails
             if((skip.getAbsoluteFile().exists() && forceReplace) || remove)
             {
 
+                // this check implicitly deletes the file, spooky code :)
                 if(remove && skip.delete())
                 {
                     System.out.println("[" + progress_ + "]" + " Thumbnail found, removing it: " + outputPath);
@@ -136,8 +141,9 @@ public class ThumbnailExtractor
                 continue;
             }
 
-            System.out.println("[" + progress_ + "] Extracting frame from: " + path +  " --> " + outputPath);
+//            System.out.println("[" + progress_ + "] Extracting frame from: " + path +  " --> " + outputPath);
 
+            // This try block adds futures to an arraylist for later use
             try
             {
                 if(!usingPercentage)
@@ -153,25 +159,17 @@ public class ThumbnailExtractor
                     thumbGenCount++;
                 }
             }
-//            catch (IOException e)
-//            {
-//                e.printStackTrace();
-//                System.err.println("Unable to output file, missing permissions?");
-//            }
-//            catch (JCodecException e)
-//            {
-//                e.printStackTrace();
-//                System.err.println("Error bad codec for video file?");
-//            }
             catch (RuntimeException e)
             {
                 e.printStackTrace();
                 System.err.println("Bad or invalid data when reading file, skipping.");
             }
+
         }
         boolean complete = false;
 
-        while(!complete) {
+        while(!complete)
+        {
             int i = 0;
             complete = true;
 
@@ -191,7 +189,7 @@ public class ThumbnailExtractor
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println("working, " + i + " number of threads complete");
+//            System.out.println("working, " + i + " number of threads complete");
 
         }
 

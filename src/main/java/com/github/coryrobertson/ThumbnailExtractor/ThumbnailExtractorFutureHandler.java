@@ -16,7 +16,9 @@ import java.util.concurrent.Future;
 
 public class ThumbnailExtractorFutureHandler
 {
-    private ExecutorService executor = Executors.newFixedThreadPool(4);
+    private ExecutorService executor = Executors.newFixedThreadPool(12);
+
+    private int thumbCount = 1;
 
     public void stopExecutor()
     {
@@ -52,10 +54,20 @@ public class ThumbnailExtractorFutureHandler
         return executor.submit(() ->
         {
             try {
-                extractFrameFromVideo(videoPath,outputPath,frameNumber);
-            } catch (JCodecException | IOException e) {
+                extractFrameFromVideo(videoPath, outputPath, frameNumber);
+            } catch (JCodecException e) {
+                System.err.println("Error bad codec for video file?");
+                System.err.println(videoPath + " -> " + outputPath);
+                return false;
+            } catch (IOException e) {
+                System.err.println("Unable to output file, missing permissions?");
+                System.err.println(videoPath + " -> " + outputPath);
+
                 return false;
             }
+            System.out.println("[" + thumbCount + "/" + ThumbnailExtractor.thumbNailTotal + "] Extracting frame from: " + videoPath +  " --> " + outputPath);
+            thumbCount++;
+
             return true;
         });
     }
@@ -64,12 +76,20 @@ public class ThumbnailExtractorFutureHandler
     {
         return executor.submit(() ->
         {
-//            System.out.println("dasda");
             try {
                 extractFramePercentFromVideo(videoPath,outputPath,percentage);
-            } catch (IOException | JCodecException e) {
+            } catch (JCodecException e) {
+                System.err.println("Error bad codec for video file?");
+                System.err.println(videoPath + " -> " + outputPath);
+                return false;
+            } catch (IOException e) {
+                System.err.println("Unable to output file, missing permissions?");
+                System.err.println(videoPath + " -> " + outputPath);
+
                 return false;
             }
+            System.out.println("[" + thumbCount + "/" + ThumbnailExtractor.thumbNailTotal + "] Extracting frame from: " + videoPath +  " --> " + outputPath);
+            thumbCount++;
             return true;
         });
     }
