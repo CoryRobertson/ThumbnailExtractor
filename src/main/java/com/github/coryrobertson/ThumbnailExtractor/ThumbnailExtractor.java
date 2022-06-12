@@ -9,17 +9,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 
-import org.jcodec.api.FrameGrab;
-import org.jcodec.api.JCodecException;
-import org.jcodec.common.*;
-import org.jcodec.common.model.Picture;
-import org.jcodec.scale.AWTUtil;
-
-import javax.imageio.ImageIO;
-import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.Future;
 
 public class ThumbnailExtractor
 {
@@ -70,7 +63,7 @@ public class ThumbnailExtractor
         }
 
         // acquire all args from argparse
-        boolean forceReplace = !((boolean) ns.getAttrs().get("r"));
+        boolean forceReplace = ((boolean) ns.getAttrs().get("r"));
         boolean remove = (boolean) ns.getAttrs().get("rm");
         boolean usingForceName = ns.getAttrs().get("n") != "";
         String forceName = (String) ns.getAttrs().get("n");
@@ -79,9 +72,12 @@ public class ThumbnailExtractor
         boolean usingPercentage = ns.getAttrs().get("p") != "-1.0";
         double percentage = Double.parseDouble((String) ns.getAttrs().get("p"));
 
+        ThumbnailExtractorFutureHandler thumb = new ThumbnailExtractorFutureHandler();
 
         // find all files recursively
         Collection<File> files = FileUtils.listFiles(new File(pathToSearch), new RegexFileFilter(".+(mkv|mp4)"), DirectoryFileFilter.DIRECTORY);
+
+        ArrayList<Future<Boolean>> futureList = new ArrayList<>();
 
         File[] files_ = files.toArray(new File[0]); // convert to a nice pretty array :)
 
@@ -146,56 +142,64 @@ public class ThumbnailExtractor
             {
                 if(!usingPercentage)
                 {
-                    extractFrameFromVideo(path, outputPath, frameNumberExtract);
+                    var a = thumb.extractFrameVideo(path, outputPath, frameNumberExtract);
+                    futureList.add(a);
                     thumbGenCount++;
                 }
                 else
                 {
-                    extractFramePercentFromVideo(path,outputPath,percentage);
+                    var a = thumb.extractFramePercent(path,outputPath,percentage);
+                    futureList.add(a);
                     thumbGenCount++;
                 }
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-                System.err.println("Unable to output file, missing permissions?");
-            }
-            catch (JCodecException e)
-            {
-                e.printStackTrace();
-                System.err.println("Error bad codec for video file?");
-            }
+//            catch (IOException e)
+//            {
+//                e.printStackTrace();
+//                System.err.println("Unable to output file, missing permissions?");
+//            }
+//            catch (JCodecException e)
+//            {
+//                e.printStackTrace();
+//                System.err.println("Error bad codec for video file?");
+//            }
             catch (RuntimeException e)
             {
                 e.printStackTrace();
                 System.err.println("Bad or invalid data when reading file, skipping.");
             }
         }
+        boolean complete = false;
+
+        while(!complete) {
+            int i = 0;
+            complete = true;
+
+            for (var future : futureList) {
+                if(!future.isDone())
+                {
+                    complete = false;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("working, " + i + " number of threads complete");
+
+        }
+
         System.out.println("Finished extracting thumbnails, thumbnails created: " + (thumbGenCount));
+        thumb.stopExecutor();
     }
 
-    private static void extractFrameFromVideo(String videoPath, String outputPath, int frameNumber) throws JCodecException, IOException
-    {
-        Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), frameNumber);
-        RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
-        ImageIO.write(renderedImage, "jpg", new File(outputPath));
-    }
 
-    private static void extractFramePercentFromVideo(String videoPath, String outputPath, double percentage) throws JCodecException, IOException
-    {
-        File file = new File(videoPath);
-        Format f = JCodecUtil.detectFormat(file);
-        Demuxer d = JCodecUtil.createDemuxer(f, file); // thank you stack overflow <3 https://github.com/jcodec/jcodec/issues/168
-        DemuxerTrack vt = d.getVideoTracks().get(0);
-        DemuxerTrackMeta dtm = vt.getMeta();
 
-        int nFrames = dtm.getTotalFrames();
-        //int fps = (int)(nFrames / dtm.getTotalDuration());
 
-        double frameNumber = percentage * nFrames;
-
-        Picture frame = FrameGrab.getFrameFromFile(new File(videoPath), (int) Math.floor(frameNumber));
-        RenderedImage renderedImage = AWTUtil.toBufferedImage(frame);
-        ImageIO.write(renderedImage, "jpg", new File(outputPath));
-    }
 }
